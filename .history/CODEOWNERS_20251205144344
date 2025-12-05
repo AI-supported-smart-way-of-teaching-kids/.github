@@ -1,0 +1,5 @@
+# CODEOWNERS - map directories to teams
+# Format: <path> <team>
+/src/backend @your-org/backend-team
+/src/frontend @your-org/frontend-team
+/notebooks @your-org/ml-team
