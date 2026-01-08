@@ -12,13 +12,14 @@ jobs:
   test:
     runs-on: ubuntu-latest
     
+    # ADD POSTGRESQL SERVICE SECTION
     services:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_DB: postgres
-          POSTGRES_USER: mati
-          POSTGRES_PASSWORD: mati1234
+          POSTGRES_DB: kids_ai_teaching      # From your settings.py
+          POSTGRES_USER: mati                 # From your settings.py
+          POSTGRES_PASSWORD: mati1234         # From your settings.py
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -27,8 +28,9 @@ jobs:
         ports:
           - 5432:5432
     
+    # ADD ENVIRONMENT VARIABLES
     env:
-      DATABASE_URL: postgres://mati:mati1234@localhost:5432/postgres
+      DATABASE_URL: postgres://mati:mati1234@localhost:5432/kids_ai_teaching
       DJANGO_SETTINGS_MODULE: kids_App.settings
     
     steps:
@@ -65,43 +67,65 @@ jobs:
           pipenv install --dev --deploy
 
       # -------------------------
-      # 5. Wait for PostgreSQL to be ready
+      # 5. Install PostgreSQL client
       # -------------------------
-      - name: Wait for PostgreSQL
+      - name: Install PostgreSQL client
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
-          until pg_isready -h localhost -p 5432; do
-            echo "Waiting for PostgreSQL..."
-            sleep 2
-          done
 
       # -------------------------
-      # 6. Run database migrations
+      # 6. Wait for PostgreSQL to be ready
+      # -------------------------
+      - name: Wait for PostgreSQL
+        run: |
+          echo "Waiting for PostgreSQL database 'kids_ai_teaching'..."
+          until pg_isready -h localhost -p 5432; do
+            sleep 2
+          done
+          echo "✅ PostgreSQL is ready!"
+          
+          # Give it a little extra time
+          sleep 3
+
+      # -------------------------
+      # 7. Create database (if not exists)
+      # -------------------------
+      - name: Create database
+        run: |
+          PGPASSWORD=mati1234 psql -h localhost -U mati -c "CREATE DATABASE kids_ai_teaching;" 2>/dev/null || true
+          echo "Database 'kids_ai_teaching' is ready"
+
+      # -------------------------
+      # 8. Run database migrations
       # -------------------------
       - name: Run migrations
         run: pipenv run python manage.py migrate
+        env:
+          DJANGO_SETTINGS_MODULE: kids_App.settings
 
       # -------------------------
-      # 7. Ruff lint
+      # 9. Ruff lint
       # -------------------------
       - name: Ruff lint (fast checks)
         run: pipenv run ruff check .
 
       # -------------------------
-      # 8. Black format check
+      # 10. Black format check
       # -------------------------
       - name: Black format check
         run: pipenv run black --check .
 
       # -------------------------
-      # 9. Flake8 lint
+      # 11. Flake8 lint
       # -------------------------
       - name: Flake8 lint
         run: pipenv run flake8 .
 
       # -------------------------
-      # 10. Run tests with pytest
+      # 12. Run tests with pytest
       # -------------------------
       - name: Run tests
+        env:
+          DJANGO_SETTINGS_MODULE: kids_App.settings
         run: pipenv run pytest -q --tb=short
