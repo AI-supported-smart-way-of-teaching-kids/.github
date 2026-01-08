@@ -65,7 +65,7 @@ jobs:
       # -------------------------
       # 8. Run tests with pytest
       # -------------------------
-      # To this:
       - name: Run tests
+        env:
+          DJANGO_SETTINGS_MODULE: kids_App.settings  # adjust to your Django settings
         run: pipenv run pytest -q
-
