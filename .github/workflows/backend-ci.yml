@@ -46,10 +46,11 @@ jobs:
       # -------------------------
       # 5. Install dependencies
       # -------------------------
+      # -------------------------
       - name: Install dependencies
         run: |
-          pipenv install --dev
-          pipenv run pip install ruff  # ensure ruff is available
+          pipenv install --dev --system --deploy
+          pip install ruff  # fallback
 
       # -------------------------
       # 6. Lint with Ruff
@@ -73,4 +74,4 @@ jobs:
       # 9. Run tests with pytest
       # -------------------------
       - name: Run tests
-        run: pipenv run pytest -q
+        run: pytest -q
