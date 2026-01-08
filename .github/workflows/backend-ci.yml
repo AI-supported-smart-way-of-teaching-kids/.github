@@ -128,4 +128,4 @@ jobs:
       - name: Run tests
         env:
           DJANGO_SETTINGS_MODULE: kids_App.settings
-        run: pipenv run pytest -q --tb=short
+        run: pipenv run pytest -v
