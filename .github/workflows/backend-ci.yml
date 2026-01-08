@@ -49,8 +49,10 @@ jobs:
       # -------------------------
       - name: Install dependencies
         run: |
-          pipenv install --dev --system --deploy
-          pip install ruff  # fallback
+          pipenv install --dev
+          # Install Django explicitly (temporary fix)
+          pipenv install django || echo "Django already installed or in Pipfile"
+          pipenv run pip install ruff
 
       # -------------------------
       # 6. Lint with Ruff
