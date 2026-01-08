@@ -11,6 +11,26 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: postgres
+          POSTGRES_USER: mati
+          POSTGRES_PASSWORD: mati1234
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    env:
+      DATABASE_URL: postgres://mati:mati1234@localhost:5432/postgres
+      DJANGO_SETTINGS_MODULE: kids_App.settings
+    
     steps:
       # -------------------------
       # 1. Checkout code
@@ -45,27 +65,43 @@ jobs:
           pipenv install --dev --deploy
 
       # -------------------------
-      # 5. Ruff lint
+      # 5. Wait for PostgreSQL to be ready
+      # -------------------------
+      - name: Wait for PostgreSQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          until pg_isready -h localhost -p 5432; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+
+      # -------------------------
+      # 6. Run database migrations
+      # -------------------------
+      - name: Run migrations
+        run: pipenv run python manage.py migrate
+
+      # -------------------------
+      # 7. Ruff lint
       # -------------------------
       - name: Ruff lint (fast checks)
         run: pipenv run ruff check .
 
       # -------------------------
-      # 6. Black format check
+      # 8. Black format check
       # -------------------------
       - name: Black format check
         run: pipenv run black --check .
 
       # -------------------------
-      # 7. Flake8 lint
+      # 9. Flake8 lint
       # -------------------------
       - name: Flake8 lint
         run: pipenv run flake8 .
 
       # -------------------------
-      # 8. Run tests with pytest
+      # 10. Run tests with pytest
       # -------------------------
-      # - name: Run tests
-      #  env:
-      #    DJANGO_SETTINGS_MODULE: kids_App.settings  # adjust to your Django settings
-      #  run: pipenv run pytest -q
+      - name: Run tests
+        run: pipenv run pytest -q --tb=short
